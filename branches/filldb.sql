@@ -103,30 +103,30 @@ DROP TABLE user_help
 
 -----------------------------------------------site--------------------------------------------------
 
-DELETE FROM site 
-DBCC CHECKIDENT('site', RESEED, 0)
+DELETE FROM application 
+DBCC CHECKIDENT('application', RESEED, 0)
 
-INSERT INTO site (SiteName, SiteAddress, SiteDescription)
-VALUES ('Wirtualna Polska', 'www.wp', 'News from Poland'),
-('onet', 'www.onet', 'Again news from Poland'),
-('Football goal', 'www.goal.pl', 'football site'),
-('Google', 'www.google.com', 'ask google'),
-('JuvePoland', 'www.juvepoland.com', 'Juventus fan website'),
-('Amazon', 'www.amazon.com', 'online book shop'),
-('YouTube', 'www.youtube.com', 'Movies database'),
-('joemonster','www.joemonster.org','funny movies etc.'),
-('allegro','www.allegro.pl','online shoping'),
-('microsoft','microsoft.com','official microsoft webiste'),
-('stack over flow','www.stackoverflow.com','forum for programmers'),
-('facebook','www.facebook.com','database of people'),
-('twitter','www.twitter.com','database of people activities'),
-('linkedin','www.linkedin.com','database of specialists'),
-('sggw','www.sggw.com','webiste of sggw university'),
-('code guru','www.codeguru.com','database of code'),
-('yahoo','www.yahoo.com','news from world'),
-('pracuj','www.pracuj.pl','job offers in Poland'),
-('oracle','www.oracle.com','official website of oracle'),
-('ibm','www.ibm.com','official website of ibm')
+INSERT INTO application(AppName, AppAddress, AppDescription)
+VALUES ('Paint', 'C:\Windows\Paint', 'Pinting program'),
+('Oracle.exe', 'C:\ProgramFiles\Oracle', 'Database program from Oracle'),
+('Gadu-gadu', 'C:\GaduGadu\gg10', 'Communicator'),
+('VisualStudio', 'C:\ProgramFiles\VS', 'Developer environment from microsoft'),
+('Notepad', 'C:\windows\notepadFolder', 'Simple Notepad'),
+('MSSQL', 'C:\System\Programs\MS', 'SQL Server from microsoft'),
+('PES2009', 'C:\Play\PES', 'Football game in free time'),
+('Skype','C:\System\Programs\Skype','Communicator Skype'),
+('IceTower','C:\Play\Ice','Game for relax'),
+('Word','C:\System\Programs\Word','Microsoft Word'),
+('Fifa','C:\Play\Fifa','game for relax'),
+('OutLook','C:\System\Programs\Outlook','Mail Program'),
+('Graph','C:\System\Programs\Graph','Econometric program'),
+('BattleField','C:\Play\BF','Game for programmers'),
+('explorer','C:\windows\system','explorer of windows'),
+('eclipse','C:\System\Programs\eclipse','java program'),
+('Sopcast','C:\online\sopcast','streaming online'),
+('Adobe','C:\System\Programs\Adobe','Adobe Reader'),
+('Xamarin','C:\Addons\XamarinStudio','Addon to VS'),
+('ibm','C:\System\Programs\ibm','One of IBM programs to test')
 
 
 -----------------------------------------EventType-------------------------------------------
@@ -157,7 +157,7 @@ VALUES ('click', 1 , 'Just clicking somewhere on website'),
 	WHILE @i<3134
 	BEGIN
 
-		INSERT INTO Events( EventSiteId, EventServiceId, EventTypeId, 
+		INSERT INTO Events( EventAppId, EventServiceId, EventTypeId, 
 							EventUserId, CustomerId, EventDate, EventDescription)
 		VALUES (
 		((FLOOR(RAND() * (20)) + 1)), -- EventSiteId
