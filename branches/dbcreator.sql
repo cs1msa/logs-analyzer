@@ -7,8 +7,8 @@ IF OBJECT_ID('dbo.Events', 'U') IS NOT NULL
 IF OBJECT_ID('dbo.EventType', 'U') IS NOT NULL
   DROP TABLE dbo.EventType
 
-IF OBJECT_ID('dbo.site', 'U') IS NOT NULL
-  DROP TABLE dbo.site
+IF OBJECT_ID('dbo.application', 'U') IS NOT NULL
+  DROP TABLE dbo.application
 
 IF OBJECT_ID('dbo.EventService', 'U') IS NOT NULL
   DROP TABLE dbo.EventService
@@ -42,12 +42,14 @@ CREATE TABLE Users
 	UserDescription VARCHAR(200) DEFAULT ''
 )
 
-CREATE TABLE site
+CREATE TABLE application
 (
-	SiteId INT PRIMARY KEY IDENTITY(1,1),
-	SiteName VARCHAR(30) UNIQUE,
-	SiteAddress VARCHAR(30) UNIQUE,
-	SiteDescription VARCHAR(200) DEFAULT ''
+	AppId INT PRIMARY KEY IDENTITY(1,1),
+	AppName VARCHAR(30) UNIQUE,
+	AppAddress VARCHAR(30) UNIQUE,
+	CustomerId INT,
+	AppDescription VARCHAR(200) DEFAULT ''
+	FOREIGN KEY (CustomerId) REFERENCES Customer(CustomerId)
 )
 
 CREATE TABLE EventType
@@ -61,14 +63,14 @@ CREATE TABLE EventType
 CREATE TABLE Events
 (
 	EventId INT PRIMARY KEY IDENTITY(1,1),
-	EventSiteId INT,
+	EventAppId INT,
 	EventServiceId INT,
 	EventTypeId INT,
 	EventUserId INT,
 	CustomerId INT,
 	EventDate DATETIME NOT NULL,
 	EventDescription VARCHAR(200)
-	FOREIGN KEY (EventSiteId) REFERENCES site(SiteId),
+	FOREIGN KEY (EventAppId) REFERENCES application(AppId),
 	FOREIGN KEY (EventServiceId) REFERENCES EventService(ServiceId),
 	FOREIGN KEY (EventTypeId) REFERENCES EventType(EventTypeId),
 	FOREIGN KEY (EventUserId) REFERENCES Users(UserId),
