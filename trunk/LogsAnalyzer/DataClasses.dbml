@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="locationapp" Class="DataClassesDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=locationapp.mssql.somee.com;Initial Catalog=locationapp;User ID=delprzemo_SQLLogin_1" SettingsObjectName="LogsAnalyzer.Properties.Settings" SettingsPropertyName="locationappConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.EventService" Member="EventServices">
+    <Type Name="EventService">
+      <Column Name="ServiceId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="ServiceName" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Service_Description" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Association Name="EventService_Event" Member="Events" ThisKey="ServiceId" OtherKey="EventServiceId" Type="Event" />
+    </Type>
+  </Table>
+  <Table Name="dbo.EventType" Member="EventTypes">
+    <Type Name="EventType">
+      <Column Name="EventTypeId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="EventTypeName" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="EventTypePriority" Type="System.Int16" DbType="SmallInt" CanBeNull="true" />
+      <Column Name="EventTypeDescription" Type="System.String" DbType="VarChar(200)" CanBeNull="true" />
+      <Association Name="EventType_Event" Member="Events" ThisKey="EventTypeId" OtherKey="EventTypeId" Type="Event" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Users" Member="Users">
+    <Type Name="User">
+      <Column Name="UserId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="UserName" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="UserDescription" Type="System.String" DbType="VarChar(200)" CanBeNull="true" />
+      <Association Name="User_Event" Member="Events" ThisKey="UserId" OtherKey="EventUserId" Type="Event" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Events" Member="Events">
+    <Type Name="Event">
+      <Column Name="EventId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="EventAppId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="EventServiceId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="EventTypeId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="EventUserId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="CustomerId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="EventDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="EventDescription" Type="System.String" DbType="VarChar(200)" CanBeNull="true" />
+      <Association Name="EventService_Event" Member="EventService" ThisKey="EventServiceId" OtherKey="ServiceId" Type="EventService" IsForeignKey="true" />
+      <Association Name="EventType_Event" Member="EventType" ThisKey="EventTypeId" OtherKey="EventTypeId" Type="EventType" IsForeignKey="true" />
+      <Association Name="User_Event" Member="User" ThisKey="EventUserId" OtherKey="UserId" Type="User" IsForeignKey="true" />
+      <Association Name="Customer_Event" Member="Customer" ThisKey="CustomerId" OtherKey="CustomerId" Type="Customer" IsForeignKey="true" />
+      <Association Name="application_Event" Member="application" ThisKey="EventAppId" OtherKey="AppId" Type="application" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Customer" Member="Customers">
+    <Type Name="Customer">
+      <Column Name="CustomerId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="CustomerName" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="CustomerDescrption" Type="System.String" DbType="VarChar(200)" CanBeNull="true" />
+      <Association Name="Customer_Event" Member="Events" ThisKey="CustomerId" OtherKey="CustomerId" Type="Event" />
+      <Association Name="Customer_application" Member="applications" ThisKey="CustomerId" OtherKey="CustomerId" Type="application" />
+    </Type>
+  </Table>
+  <Table Name="dbo.application" Member="applications">
+    <Type Name="application">
+      <Column Name="AppId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AppName" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="AppAddress" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="CustomerId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="AppDescription" Type="System.String" DbType="VarChar(200)" CanBeNull="true" />
+      <Association Name="application_Event" Member="Events" ThisKey="AppId" OtherKey="EventAppId" Type="Event" />
+      <Association Name="Customer_application" Member="Customer" ThisKey="CustomerId" OtherKey="CustomerId" Type="Customer" IsForeignKey="true" />
+    </Type>
+  </Table>
+</Database>
