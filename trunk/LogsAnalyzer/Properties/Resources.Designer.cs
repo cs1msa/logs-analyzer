@@ -63,6 +63,16 @@ namespace LogsAnalyzer.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap market_report_icon {
+            get {
+                object obj = ResourceManager.GetObject("market_report_icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap tick_ {
             get {
                 object obj = ResourceManager.GetObject("tick_", resourceCulture);
