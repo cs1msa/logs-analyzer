@@ -64,6 +64,7 @@
             this.DGV_Display = new System.Windows.Forms.DataGridView();
             this.EventsBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.locationappDataSetBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.BW_Worker = new System.ComponentModel.BackgroundWorker();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -512,7 +513,11 @@
             this.DGV_Display.Name = "DGV_Display";
             this.DGV_Display.Size = new System.Drawing.Size(869, 524);
             this.DGV_Display.TabIndex = 0;
-
+            // 
+            // BW_Worker
+            // 
+            this.BW_Worker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BW_Worker_DoWork);
+            this.BW_Worker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BW_Worker_RunWorkerCompleted);
             // 
             // MainForm
             // 
@@ -521,6 +526,7 @@
             this.ClientSize = new System.Drawing.Size(1108, 575);
             this.Controls.Add(this.splitContainer1);
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Logs Analyzer";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -608,6 +614,7 @@
         private System.Windows.Forms.GroupBox GB_FirsChoice;
         private System.Windows.Forms.Label LAB_ResultsCount;
         private System.Windows.Forms.SplitContainer splitContainer7;
+        private System.ComponentModel.BackgroundWorker BW_Worker;
     }
 }
 

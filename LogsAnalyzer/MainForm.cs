@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Data.Linq.SqlClient;
+using System.Threading;
 
 namespace LogsAnalyzer
 {
@@ -33,17 +34,33 @@ namespace LogsAnalyzer
         public MainForm()
         {
             InitializeComponent();
-                        
+
             dcdc = new DataClassesDataContext(connectionString);
+            while(!TestConnection(dcdc.Connection))
+            {   
+            retry:
+                ConnectionStringInput connStrForm = new ConnectionStringInput();
+                if (connStrForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)                
+                    Environment.Exit(0);
+                try
+                {
+                    dcdc.Connection.ConnectionString = ConnectionStringInput.ConnectionString;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Provided connection string is in wrong format!" + Environment.NewLine + "Details:" + Environment.NewLine + e.Message, "Logs Analyzer - Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    goto retry;
+                }
+            }
 
             setGroupBoxes();
 
             CB_FirstChoice.DataSource = Enum.GetValues(typeof(Entities));
             CB_FirstChoice.SelectedItem = null;
-            CB_FirstChoice.Text = "Select Category...";
+            CB_FirstChoice.Text = "Select Entity...";
             
-            DTP_From.Value = DateTime.Now.Date.AddYears(-250); //DTP_From.Value = DateTime.Now.Date.AddDays(-7);
-            DTP_To.Value = DateTime.Now.Date.AddYears(300);  //DTP_To.Value = DateTime.Now.Date;
+            DTP_From.Value = DTP_From.Value = DateTime.Now.AddYears(-2);
+            DTP_To.Value = DTP_To.Value = DateTime.Now.Date;
 
             CLB_EventTypes.Items.AddRange((from et in dcdc.EventTypes select et).ToArray());
             CLB_EventTypes.DisplayMember = "EventTypeName";
@@ -65,6 +82,25 @@ namespace LogsAnalyzer
             _setupCompleted = true;
         }
 
+        private bool TestConnection(System.Data.Common.DbConnection dbConnection)
+        {
+            try
+            {
+                dbConnection.Open();
+                return true;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Can not connect to database." + Environment.NewLine + "Details:" + Environment.NewLine + e.Message, "Logs Analyzer - Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            finally
+            {
+                dbConnection.Close();                
+            }
+        }
+
+        
         private void CB_FirstChoice_SelectedIndexChanged(object sender, EventArgs e)
         {
             _groupBoxes.ForEach(gb => gb.Enabled = false);
@@ -94,87 +130,128 @@ namespace LogsAnalyzer
         {
             if (_setupCompleted)
             {
-                if (!DGV_Display.Columns.Contains("Select"))
-                    AddSelectColumn();
+                BeginInvoke((MethodInvoker)delegate
+                {
 
-                DateTime DateTimeFrom = DTP_From.Value.AddTicks(TTB_From.Time.Ticks);
-                DateTime DateTimeTo = DTP_To.Value.AddTicks(TTB_To.Time.Ticks);
-
-                List<string> checkedEventTypes = new List<string>();
-                foreach (var id in CLB_EventTypes.CheckedItems)
-                    checkedEventTypes.Add(((EventType)id).EventTypeId.ToString());
-
-                List<string> checkedEventServices = new List<string>();
-                foreach (var serv in CLB_EventServices.CheckedItems)
-                    checkedEventServices.Add(((EventService)serv).ServiceId.ToString());
-
-                List<string> checkedApplications = new List<string>();
-                foreach (var app in CLB_Applications.CheckedItems)
-                    checkedApplications.Add(((application)app).AppId.ToString());
-
-                List<string> checkedUsers = new List<string>();
-                foreach (var usr in CLB_Users.CheckedItems)
-                    checkedUsers.Add(((User)usr).UserId.ToString());
-
-                BindingSource bs = new BindingSource();
-                if ((Entities)CB_FirstChoice.SelectedItem == Entities.Events)
-                    bs.DataSource = (from evnt in dcdc.Events
-                                     where evnt.EventDate >= DateTimeFrom
-                                     where evnt.EventDate <= DateTimeTo
-                                     where checkedEventTypes.Contains(evnt.EventTypeId.ToString())
-                                     where checkedEventServices.Contains(evnt.EventServiceId.ToString())
-                                     where checkedApplications.Contains(evnt.EventAppId.ToString())
-                                     where checkedUsers.Contains(evnt.EventUserId.ToString())
-                                     select new { evnt.EventDate, evnt.EventDate.TimeOfDay, evnt.EventType.EventTypeName, evnt.EventService.ServiceName, evnt.application.AppName, evnt.User.UserName}).ToList();
-                else
-                    if ((Entities)CB_FirstChoice.SelectedItem == Entities.Applications)
-                        bs.DataSource = (from app in dcdc.applications
-                                         join cstmr in dcdc.Customers on app.CustomerId equals cstmr.CustomerId
-                                         where checkedApplications.Contains(app.AppId.ToString())
-                                         select new { app.AppName, app.AppDescription, app.AppAddress, cstmr.CustomerName }).ToList();
+                    if ((Entities)CB_FirstChoice.SelectedItem == Entities.Users)
+                    {
+                        if (!DGV_Display.Columns.Contains("Report"))
+                            AddReportColumn();
+                    }
                     else
-                        if ((Entities)CB_FirstChoice.SelectedItem == Entities.Customer)
-                            bs.DataSource = (from cstmr in dcdc.Customers
-                                             select new { cstmr.CustomerName, cstmr.CustomerDescrption }).ToList();
+                        RemoveReportColumn();
+
+                    DateTime DateTimeFrom = DTP_From.Value.AddTicks(TTB_From.Time.Ticks);
+                    DateTime DateTimeTo = DTP_To.Value.AddTicks(TTB_To.Time.Ticks);
+
+                    List<string> checkedEventTypes = new List<string>();
+                    foreach (var id in CLB_EventTypes.CheckedItems)
+                        checkedEventTypes.Add(((EventType)id).EventTypeId.ToString());
+
+                    List<string> checkedEventServices = new List<string>();
+                    foreach (var serv in CLB_EventServices.CheckedItems)
+                        checkedEventServices.Add(((EventService)serv).ServiceId.ToString());
+
+                    List<string> checkedApplications = new List<string>();
+                    foreach (var app in CLB_Applications.CheckedItems)
+                        checkedApplications.Add(((application)app).AppId.ToString());
+
+                    List<string> checkedUsers = new List<string>();
+                    foreach (var usr in CLB_Users.CheckedItems)
+                        checkedUsers.Add(((User)usr).UserId.ToString());
+
+                    BindingSource bs = new BindingSource();
+                    if ((Entities)CB_FirstChoice.SelectedItem == Entities.Events)
+                        bs.DataSource = (from evnt in dcdc.Events
+                                         where evnt.EventDate >= DateTimeFrom
+                                         where evnt.EventDate <= DateTimeTo
+                                         where checkedUsers.Contains(evnt.EventUserId.ToString())
+                                         where checkedEventServices.Contains(evnt.EventServiceId.ToString())
+                                         where checkedEventTypes.Contains(evnt.EventTypeId.ToString())                                        
+                                         where checkedApplications.Contains(evnt.EventAppId.ToString())                                         
+                                         select new { evnt.EventId, evnt.EventDate, evnt.EventDate.TimeOfDay, evnt.EventType.EventTypeName, evnt.EventService.ServiceName, evnt.application.AppName, evnt.User.UserName, evnt.Customer.CustomerName }
+                                             into anon //continous query with the results of the previous one
+                                             orderby anon.EventDate descending
+                                             select anon).ToList(); 
+                    else
+                        if ((Entities)CB_FirstChoice.SelectedItem == Entities.Applications)
+                            bs.DataSource = (from app in dcdc.applications
+                                             join cstmr in dcdc.Customers on app.CustomerId equals cstmr.CustomerId
+                                             where checkedApplications.Contains(app.AppId.ToString())
+                                             select new { app.AppId, app.AppName, app.AppDescription, app.AppAddress, cstmr.CustomerName }).ToList();
                         else
-                            if ((Entities)CB_FirstChoice.SelectedItem == Entities.Users)
-                                bs.DataSource = (from usr in dcdc.Users
-                                                 where checkedUsers.Contains(usr.UserId.ToString())
-                                                 select new { usr.UserName, usr.UserDescription }).ToList();
+                            if ((Entities)CB_FirstChoice.SelectedItem == Entities.Customer)
+                                bs.DataSource = (from cstmr in dcdc.Customers
+                                                 select new { cstmr.CustomerId, cstmr.CustomerName, cstmr.CustomerDescrption }).ToList();
                             else
-                                if ((Entities)CB_FirstChoice.SelectedItem == Entities.EventTypes)
-                                    bs.DataSource = (from et in dcdc.EventTypes
-                                                     where checkedEventTypes.Contains(et.EventTypeId.ToString())
-                                                     select new { et.EventTypeName, et.EventTypePriority, et.EventTypeDescription }).ToList();
+                                if ((Entities)CB_FirstChoice.SelectedItem == Entities.Users)
+                                    bs.DataSource = (from usr in dcdc.Users
+                                                     where checkedUsers.Contains(usr.UserId.ToString())
+                                                     select new { usr.UserId, usr.UserName, usr.UserDescription }).ToList();
                                 else
-                                    if ((Entities)CB_FirstChoice.SelectedItem == Entities.EventService)
-                                        bs.DataSource = (from es in dcdc.EventServices
-                                                         where checkedEventServices.Contains(es.ServiceId.ToString())
-                                                         select new { es.ServiceName, es.Service_Description }).ToList();
+                                    if ((Entities)CB_FirstChoice.SelectedItem == Entities.EventTypes)
+                                        bs.DataSource = (from et in dcdc.EventTypes
+                                                         where checkedEventTypes.Contains(et.EventTypeId.ToString())
+                                                         select new { et.EventTypeId, et.EventTypeName, et.EventTypePriority, et.EventTypeDescription }).ToList();
+                                    else
+                                        if ((Entities)CB_FirstChoice.SelectedItem == Entities.EventService)
+                                            bs.DataSource = (from es in dcdc.EventServices
+                                                             where checkedEventServices.Contains(es.ServiceId.ToString())
+                                                             select new { es.ServiceId, es.ServiceName, es.Service_Description }).ToList();
 
 
-                DGV_Display.DataSource = bs;
-                foreach (DataGridViewColumn col in DGV_Display.Columns)
-                    col.ReadOnly = true;
+                    DGV_Display.DataSource = bs;
 
-                DGV_Display.Columns["Select"].ReadOnly = false;
 
-                foreach(DataGridViewColumn col in DGV_Display.Columns)
-                    col.Width = col.GetPreferredWidth(DataGridViewAutoSizeColumnMode.AllCells, false);
+                    foreach (DataGridViewColumn col in DGV_Display.Columns)
+                        col.ReadOnly = true;
 
-                LAB_ResultsCount.Text = "Number of results: " + DGV_Display.RowCount.ToString();
+                    foreach (DataGridViewColumn col in DGV_Display.Columns)
+                    {
+                        if (col.Name.EndsWith("Id"))
+                            col.Visible = false;
+                        col.Width = col.GetPreferredWidth(DataGridViewAutoSizeColumnMode.AllCells, false);
+                    }
+                    LAB_ResultsCount.Text = "Number of results: " + DGV_Display.RowCount.ToString();
+
+                });
             }
         }
 
-        private void AddSelectColumn()
+        private void RemoveReportColumn()
         {
-            var cb_col = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            cb_col.DataPropertyName = "Select";
-            cb_col.HeaderText = "Select";
-            cb_col.Name = "Select";
-            cb_col.FalseValue = "0";
-            cb_col.TrueValue = "1";
-            DGV_Display.Columns.Add(cb_col);
+            if(DGV_Display.Columns.Contains("Report"))
+                DGV_Display.Columns.Remove("Report");
+        }
+
+        private void AddReportColumn()
+        {
+            var bt_col = new DataGridViewImageColumn();
+            bt_col.DataPropertyName = "Report";
+            bt_col.HeaderText = "Report";
+            bt_col.Name = "Report";
+            bt_col.Image = LogsAnalyzer.Properties.Resources.market_report_icon;
+            bt_col.ImageLayout = DataGridViewImageCellLayout.Zoom;
+            DGV_Display.Columns.Add(bt_col);
+            DGV_Display.CellMouseClick += new DataGridViewCellMouseEventHandler(DGV_Display_CellMouseClick);
+            DGV_Display.CellMouseEnter += new DataGridViewCellEventHandler(DGV_Display_CellMouseEnter);
+            DGV_Display.CellMouseLeave += new DataGridViewCellEventHandler(DGV_Display_CellMouseLeave);
+
+        }
+
+        void DGV_Display_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+                if (DGV_Display.Columns[e.ColumnIndex].Name == "Report")
+                    (DGV_Display.Rows[e.RowIndex].Cells[e.ColumnIndex] as DataGridViewImageCell).ImageLayout = DataGridViewImageCellLayout.Zoom;
+        }
+
+        void DGV_Display_CellMouseEnter(object sender, DataGridViewCellEventArgs e)
+        {
+            if(e.RowIndex >=0 && e.ColumnIndex>=0)
+                if (DGV_Display.Columns[e.ColumnIndex].Name == "Report")
+                    (DGV_Display.Rows[e.RowIndex].Cells[e.ColumnIndex] as DataGridViewImageCell).ImageLayout = DataGridViewImageCellLayout.Normal; //(DGV_Display.Columns[e.ColumnIndex] as DataGridViewImageColumn).ImageLayout = DataGridViewImageCellLayout.Zoom; //LogsAnalyzer.Properties.Resources.market_report_icon;
+
         }
 
         private void DTP_From_ValueChanged(object sender, EventArgs e)
@@ -232,32 +309,29 @@ namespace LogsAnalyzer
         private void clb_ItemCheck()
         {
             if (!tickall)
-                this.BeginInvoke((MethodInvoker)delegate  // workaround for lack of ItemChecked event for CheckedListBox control
-                {
-                    LoadData();
-                });
+                LoadData();
         }
 #endregion
 
 #region Filter_SearchTextBoxEvents
         private void STB_Filter_EventTypes_TextChanged(object sender, EventArgs e)
         {
-            CLB_EventTypes.SelectedItem = CLB_EventTypes.Items.Cast<EventType>().Where(et => et.EventTypeName.StartsWith(STB_Filter_EventTypes.Text)).FirstOrDefault();
+            CLB_EventTypes.SelectedItem = CLB_EventTypes.Items.Cast<EventType>().Where(et => et.EventTypeName.Contains(STB_Filter_EventTypes.Text)).FirstOrDefault();
         }
 
         private void STB_Filter_EventServices_TextChanged(object sender, EventArgs e)
         {
-            CLB_EventServices.SelectedItem = CLB_EventServices.Items.Cast<EventService>().Where(es => es.ServiceName.StartsWith(STB_Filter_EventServices.Text)).FirstOrDefault();
+            CLB_EventServices.SelectedItem = CLB_EventServices.Items.Cast<EventService>().Where(es => es.ServiceName.Contains(STB_Filter_EventServices.Text)).FirstOrDefault();
         }
 
         private void STB_Filter_Applications_TextChanged(object sender, EventArgs e)
         {
-            CLB_Applications.SelectedItem = CLB_Applications.Items.Cast<application>().Where(app => app.AppName.StartsWith(STB_Filter_Applications.Text)).FirstOrDefault();
+            CLB_Applications.SelectedItem = CLB_Applications.Items.Cast<application>().Where(app => app.AppName.Contains(STB_Filter_Applications.Text)).FirstOrDefault();
         }
         
         private void STB_Filter_Users_TextChanged(object sender, EventArgs e)
         {
-            CLB_Users.SelectedItem = CLB_Users.Items.Cast<User>().Where(usr => usr.UserName.StartsWith(STB_Filter_Users.Text)).FirstOrDefault();
+            CLB_Users.SelectedItem = CLB_Users.Items.Cast<User>().Where(usr => usr.UserName.Contains(STB_Filter_Users.Text)).FirstOrDefault();
         }
 #endregion
 
@@ -298,5 +372,47 @@ namespace LogsAnalyzer
             state = !state;
         }
 #endregion
+
+        Loader loaderForm;
+        Report reportForm;
+        void DGV_Display_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if(e.ColumnIndex != -1 && e.RowIndex != -1)
+                if (DGV_Display.Columns[e.ColumnIndex].Name == "Report")
+                {
+                    loaderForm = new Loader();
+                    BW_Worker.RunWorkerAsync(e.RowIndex);
+                    loaderForm.ShowDialog();
+                    reportForm.Show();
+                }
+        }
+
+        private void BW_Worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Invoke((MethodInvoker)delegate
+            {                                                
+                foreach (DataGridViewColumn col in DGV_Display.Columns)
+                    if (col.Name.EndsWith("Id"))
+                    {
+                        if ((Entities)CB_FirstChoice.SelectedItem == Entities.Users) //just to be sure
+                            e.Result = (User)(from usr in dcdc.Users
+                                            where usr.UserId == (int)DGV_Display.Rows[(int)e.Argument].Cells[col.Index].Value
+                                            select usr).FirstOrDefault();
+                        break;
+                    }
+            });
+
+            if (e.Result != null)
+            {
+                reportForm = new Report(dcdc, e.Result as User);
+            }
+            else
+                MessageBox.Show("Can not create a report for this user!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            
+        }        
+        private void BW_Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            loaderForm.Dispose();            
+        }
     }
 }
